@@ -1,2 +1,2 @@
-# yttu-mzt
+# ytu-mtz
 for ytu
