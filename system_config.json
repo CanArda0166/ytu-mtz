@@ -1,0 +1,11 @@
+{
+  "registrationEnabled": true,
+  "loginEnabled": true,
+  "qrScanningEnabled": false,
+  "emailVerificationRequired": false,
+  "profileEditingEnabled": false,
+  "seminarOperationsEnabled": false,
+  "statsVisibilityEnabled": false,
+  "csvExportEnabled": false,
+  "notificationsEnabled": true
+}

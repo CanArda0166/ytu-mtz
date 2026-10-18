@@ -1,0 +1,162 @@
+generator client {
+  provider="prisma-client-js"
+}
+
+datasource db {
+  provider="postgresql"
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  surname       String
+  email         String    @unique
+  phone         String
+  birthDate     DateTime
+  tcNo          String
+  gender        String?
+  university    String?
+  faculty       String?
+  department    String?
+  password      String
+  role          Role      @default(MEMBER)
+  emailVerified Boolean   @default(false)
+  lastIp        String?
+  lastSeen      DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tokens        Token[]
+  entries       Entry[]
+  requestedActions PendingAction[] @relation("RequestedActions")
+  logs          SystemLog[]
+  helpRequests  HelpRequest[]
+  helpMessages  HelpMessage[]
+}
+
+model Seminar {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  capacity    Int?
+  startTime   DateTime?
+  endTime     DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entries     Entry[]
+}
+
+model Token {
+  id        String    @id @default(cuid())
+  userId    String
+  token     String    @unique
+  type      TokenType
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Entry {
+  id            String   @id @default(cuid())
+  userId        String
+  seminarId     String
+  type          String   // "CHECKIN" or "CHECKOUT"
+  scannedByName String?
+  createdAt     DateTime @default(now())
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  seminar       Seminar  @relation(fields: [seminarId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  ROOT
+  OWNER
+  ADMIN
+  STAFF
+  MEMBER
+}
+
+enum TokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  QR
+}
+
+model PendingAction {
+  id          String   @id @default(cuid())
+  type        String   // e.g., "PERMISSION_UPDATE", "ROLE_CHANGE"
+  data        Json
+  requesterId String
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requester   User     @relation("RequestedActions", fields: [requesterId], references: [id])
+}
+
+model SystemLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  severity  String   @default("INFO") // INFO, WARNING, CRITICAL
+  details   Json?
+  role      String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  message     String
+  type        String   @default("INFO") // INFO, WARNING, SUCCESS, URGENT
+  targetRole  String?  // Optional: All if null
+  isActive    Boolean  @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemConfig {
+  id    String @id @default("default")
+  data  Json
+}
+
+model Permission {
+  id    String @id @default("default")
+  perms Json
+}
+
+model HelpRequest {
+  id          String   @id @default(cuid())
+  userId      String?
+  name        String?
+  email       String?
+  subject     String
+  message     String
+  status      String   @default("OPEN") // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  priority    String   @default("NORMAL") // LOW, NORMAL, HIGH, URGENT
+  response    String?
+  respondedBy String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?    @relation(fields: [userId], references: [id])
+  messages    HelpMessage[]
+}
+
+model HelpMessage {
+  id          String   @id @default(cuid())
+  requestId   String
+  senderId    String?
+  senderRole  String   // "USER", "ADMIN"
+  message     String
+  createdAt   DateTime @default(now())
+
+  request     HelpRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  sender      User?       @relation(fields: [senderId], references: [id])
+}
+
